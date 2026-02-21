@@ -367,4 +367,3 @@ export function EntryScreen({ onComplete }: EntryScreenProps) {
     </div>
   );
         }
->>>>>>> 4ce55e143bf7dbe5a8976c9db4d3ab45a5bd36b3

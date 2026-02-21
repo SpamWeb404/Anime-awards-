@@ -1,0 +1,171 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  email         String?   @unique
+  authProvider  String?   // "discord", "google", "email"
+  summonDate    DateTime  @default(now())
+  lastSeen      DateTime  @updatedAt
+  role          String    @default("user") // "user" or "admin"
+  privacyMode   String    @default("public") // "public", "private", "anonymous"
+  preferences   Json?     // theme, companionPersonality, etc.
+  votes         Vote[]
+  achievements  UserAchievement[]
+  spiritForm    SpiritForm?
+  sessions      Session[]
+  accounts      Account[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model SpiritForm {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  glowColor String   @default("#ff69b4")
+  orbStyle  String   @default("default")
+  auraSize  String   @default("medium") // small, medium, large
+  tailCount Int      @default(3)
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  element     String   // "fire", "water", "shadow", "light", "nature", "thunder", "ice"
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  nominees    Nominee[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Nominee {
+  id             String   @id @default(cuid())
+  categoryId     String
+  category       Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title          String
+  studio         String?
+  imageUrl       String   // color image
+  mangaArtUrl    String?  // black/white version
+  description    String?  @db.Text
+  hiddenGemScore Float    @default(0) // calculated based on popularity differential
+  voteCount      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  votes          Vote[]
+}
+
+model Vote {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nomineeId  String
+  nominee    Nominee  @relation(fields: [nomineeId], references: [id], onDelete: Cascade)
+  categoryId String
+  boundAt    DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, categoryId]) // one vote per user per category
+  @@index([nomineeId])
+  @@index([categoryId])
+}
+
+model Achievement {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  slug        String          @unique
+  description String
+  icon        String          // emoji or image path
+  rarity      String          @default("common") // common, rare, epic, legendary
+  condition   String          // condition type for automatic checking
+  users       UserAchievement[]
+  createdAt   DateTime        @default(now())
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  earnedAt      DateTime    @default(now())
+
+  @@unique([userId, achievementId])
+}
+
+model Announcement {
+  id        String    @id @default(cuid())
+  message   String    @db.Text
+  type      String    @default("info") // info, warning, celebration, urgent
+  createdBy String?   // admin user id
+  createdAt DateTime  @default(now())
+  expiresAt DateTime? // if null, show until dismissed
+  isGlobal  Boolean   @default(true)
+  dismissedBy String[] // array of user IDs who dismissed this
+}
+
+model AppConfig {
+  id              String    @id @default(cuid())
+  key             String    @unique
+  value           String
+  description     String?
+  updatedAt       DateTime  @updatedAt
+  updatedBy       String?   // admin user id
+}
+
+// For tracking voting periods
+model VotingPeriod {
+  id          String    @id @default(cuid())
+  name        String
+  startsAt    DateTime
+  endsAt      DateTime
+  isActive    Boolean   @default(true)
+  description String?
+  createdAt   DateTime  @default(now())
+}

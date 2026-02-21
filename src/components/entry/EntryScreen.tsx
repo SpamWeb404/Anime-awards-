@@ -366,4 +366,4 @@ export function EntryScreen({ onComplete }: EntryScreenProps) {
       </AnimatePresence>
     </div>
   );
-        }
+                  }

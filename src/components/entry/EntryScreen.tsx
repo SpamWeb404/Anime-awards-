@@ -17,11 +17,31 @@ const floatingTexts = [
   'Destiny calls...',
 ];
 
+// Type for ambient particles
+type Particle = {
+  left: string;
+  top: string;
+  delay: number;
+  duration: number;
+};
+
 export function EntryScreen({ onComplete }: EntryScreenProps) {
   const [stage, setStage] = useState<'book' | 'opening' | 'tunnel' | 'complete'>('book');
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [hasClicked, setHasClicked] = useState(false);
+  const [ambientParticles, setAmbientParticles] = useState<Particle[]>([]);
   const router = useRouter();
+
+  // Generate ambient particles only on the client (after mount)
+  useEffect(() => {
+    const particles = Array.from({ length: 20 }, () => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: Math.random() * 2,
+      duration: 3 + Math.random() * 2,
+    }));
+    setAmbientParticles(particles);
+  }, []);
 
   // Handle book click
   const handleBookClick = useCallback(() => {
@@ -61,24 +81,24 @@ export function EntryScreen({ onComplete }: EntryScreenProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Ambient particles */}
+            {/* Ambient particles - generated client-side only */}
             <div className="absolute inset-0 pointer-events-none">
-              {[...Array(20)].map((_, i) => (
+              {ambientParticles.map((particle, i) => (
                 <motion.div
                   key={i}
                   className="absolute w-1 h-1 bg-violet-400/30 rounded-full"
                   style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
+                    left: particle.left,
+                    top: particle.top,
                   }}
                   animate={{
                     y: [0, -30, 0],
                     opacity: [0.3, 0.8, 0.3],
                   }}
                   transition={{
-                    duration: 3 + Math.random() * 2,
+                    duration: particle.duration,
                     repeat: Infinity,
-                    delay: Math.random() * 2,
+                    delay: particle.delay,
                   }}
                 />
               ))}
@@ -346,4 +366,4 @@ export function EntryScreen({ onComplete }: EntryScreenProps) {
       </AnimatePresence>
     </div>
   );
-}
+        }

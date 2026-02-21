@@ -1,4 +1,3 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
   images: {
@@ -22,14 +21,12 @@ const nextConfig = {
       },
     ];
   },
-  // Disable eslint during build
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Disable typescript errors during build
   typescript: {
     ignoreBuildErrors: true,
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
